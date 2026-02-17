@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>يومي في رمضان</title>
+
+  <style>
+    body {
+      font-family: "Tahoma", Arial, sans-serif;
+      background: #f5f7f8;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      background: #1f4c5c;
+      color: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
+
+    .info {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .progress-box {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 18px;
+      background: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: #27ae60;
+      transition: 0.3s;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 6px;
+      font-size: 13px;
+    }
+
+    th {
+      color: white;
+      font-weight: bold;
+    }
+
+    .day {
+      background: #2f6b7a;
+      color: white;
+      font-weight: bold;
+    }
+
+    .salat {
+      background: #6fb66a;
+    }
+
+    .adhkar {
+      background: #d86177;
+    }
+
+    .quran {
+      background: #f2a75b;
+    }
+
+    .good {
+      background: #4db5c1;
+    }
+
+    input[type="checkbox"] {
+      transform: scale(1.15);
+      cursor: pointer;
+    }
+
+    .small {
+      font-size: 11px;
+    }
+
+    .percent {
+      font-weight: bold;
+      color: #1f4c5c;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 10px;
+      background: #c0392b;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+
+<h1> يومي في رمضان - جدول متابعة يومي</h1>
+<div class="info"> يتم حفظ العلامات تلقائيًا + يتم حساب نسبة الإنجاز</div>
+
+<div class="progress-box">
+  <div><b> نسبة إنجاز الشهر:</b> <span id="monthPercent">0%</span></div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="monthProgress"></div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th class="day">اليوم</th>
+
+      <th class="salat" colspan="8">الصلاة</th>
+      <th class="adhkar" colspan="5">الأذكار</th>
+      <th class="quran" colspan="2">القرآن</th>
+      <th class="good" colspan="5">أعمال صالحة</th>
+
+      <th class="day">الإنجاز</th>
+    </tr>
+
+    <tr>
+      <th class="day"></th>
+
+      <!-- الصلاة -->
+      <th class="salat">فجر</th>
+      <th class="salat">ظهر</th>
+      <th class="salat">عصر</th>
+      <th class="salat">مغرب</th>
+      <th class="salat">عشاء</th>
+      <th class="salat small">سنن<br>(12)</th>
+      <th class="salat">ضحى</th>
+      <th class="salat small">قيام<br>الليل</th>
+
+      <!-- الأذكار -->
+      <th class="adhkar">صباح</th>
+      <th class="adhkar">مساء</th>
+      <th class="adhkar">استغفار</th>
+      <th class="adhkar small">الصلاة على<br>النبي ﷺ</th>
+      <th class="adhkar small">أذكار<br>ودعاء</th>
+
+      <!-- القرآن -->
+      <th class="quran">تلاوة</th>
+      <th class="quran">تدبر</th>
+
+      <!-- أعمال صالحة -->
+      <th class="good">صدقة</th>
+      <th class="good small">بر الوالدين<br>صلة الرحم</th>
+      <th class="good">دعوة</th>
+      <th class="good small">طلب العلم</th>
+      <th class="good">إطعام</th>
+
+      <th class="day">%</th>
+    </tr>
+  </thead>
+
+  <tbody id="tableBody"></tbody>
+</table>
+
+<button onclick="clearAll()"> مسح كل العلامات</button>
+
+<script>
+  const body = document.getElementById("tableBody");
+  const monthPercentText = document.getElementById("monthPercent");
+  const monthProgress = document.getElementById("monthProgress");
+
+  const tasksPerDay = 20; // عدد الخانات لكل يوم
+  const totalDays = 30;
+
+  function saveData() {
+    const data = [];
+    document.querySelectorAll("input[type='checkbox']").forEach(chk => {
+      data.push(chk.checked);
+    });
+    localStorage.setItem("ramadanTrackerData", JSON.stringify(data));
+    calculateProgress();
+  }
+
+  function loadData() {
+    const saved = localStorage.getItem("ramadanTrackerData");
+    if (saved) {
+      const data = JSON.parse(saved);
+      const checkboxes = document.querySelectorAll("input[type='checkbox']");
+      checkboxes.forEach((chk, index) => {
+        chk.checked = data[index] || false;
+      });
+    }
+    calculateProgress();
+  }
+
+  function calculateProgress() {
+    const rows = document.querySelectorAll("tbody tr");
+    let monthChecked = 0;
+    let monthTotal = totalDays * tasksPerDay;
+
+    rows.forEach((row, dayIndex) => {
+      const checkboxes = row.querySelectorAll("input[type='checkbox']");
+      let checkedCount = 0;
+
+      checkboxes.forEach(chk => {
+        if (chk.checked) checkedCount++;
+      });
+
+      monthChecked += checkedCount;
+
+      let percent = Math.round((checkedCount / tasksPerDay) * 100);
+      row.querySelector(".percent").textContent = percent + "%";
+    });
+
+    let monthPercent = Math.round((monthChecked / monthTotal) * 100);
+    monthPercentText.textContent = monthPercent + "%";
+    monthProgress.style.width = monthPercent + "%";
+  }
+
+  function clearAll() {
+    if (confirm("هل تريد مسح جميع العلامات؟")) {
+      localStorage.removeItem("ramadanTrackerData");
+      document.querySelectorAll("input[type='checkbox']").forEach(chk => {
+        chk.checked = false;
+      });
+      calculateProgress();
+    }
+  }
+
+  // إنشاء الجدول 30 يوم
+  for (let i = 1; i <= totalDays; i++) {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td class="day">${i} رمضان</td>
+
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+      <td><input type="checkbox"></td>
+
+      <td class="percent">0%</td>
+    `;
+
+    body.appendChild(row);
+  }
+
+  // إضافة حدث حفظ تلقائي
+  document.querySelectorAll("input[type='checkbox']").forEach(chk => {
+    chk.addEventListener("change", saveData);
+  });
+
+  // تحميل البيانات عند فتح الصفحة
+  loadData();
+</script>
+
+</body>
+</html>
